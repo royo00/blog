@@ -1,0 +1,55 @@
+# 应用名称
+spring:
+  application:
+    name: blog
+
+  # 数据库配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/blog?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # Thymeleaf 配置
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+    encoding: UTF-8
+
+# 服务器端口
+server:
+  port: 8080
+
+# MyBatis Plus 配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  mapper-locations: classpath*:/mapper/**/*.xml
+
+# JWT 配置
+jwt:
+  secret: 06b5023bcbf1cceaf2e6206bade2c7de
+  expiration: 604800000
+
+# 文件上传路径
+upload:
+  path: uploads/
+
+# 日志配置
+logging:
+  level:
+    com.blog: DEBUG
+    com.blog.mapper: DEBUG

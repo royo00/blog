@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 个人博客</title>
+    <!-- Bootstrap 5 CSS -->
+    <link th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link th:href="@{/webjars/bootstrap-icons/1.11.1/font/bootstrap-icons.css}" rel="stylesheet">
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 0;
+        }
+        .login-card {
+            max-width: 420px;
+            width: 100%;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px 16px 0 0;
+            padding: 2rem;
+            color: white;
+            text-align: center;
+        }
+        .login-header i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label {
+            color: #667eea;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+        }
+        .btn-login:hover {
+            background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .back-home {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+        }
+        .back-home a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+        .back-home a:hover {
+            opacity: 1;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="back-home">
+        <a href="/"><i class="bi bi-arrow-left"></i> 返回首页</a>
+    </div>
+
+    <div class="card login-card">
+        <div class="login-header">
+            <i class="bi bi-person-circle"></i>
+            <h3 class="mb-1">欢迎回来</h3>
+            <p class="mb-0 opacity-75">登录您的账户</p>
+        </div>
+
+        <div class="card-body p-4">
+            <div id="alert" class="alert d-none" role="alert"></div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="username" placeholder="用户名" required autocomplete="username">
+                    <label for="username"><i class="bi bi-person me-2"></i>用户名</label>
+                </div>
+
+                <div class="form-floating mb-4">
+                    <input type="password" class="form-control" id="password" placeholder="密码" required autocomplete="current-password">
+                    <label for="password"><i class="bi bi-lock me-2"></i>密码</label>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-login btn-lg" id="submitBtn">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>登录
+                    </button>
+                </div>
+            </form>
+
+            <hr class="my-4">
+
+            <p class="text-center text-muted mb-0">
+                还没有账户? <a href="/register" class="text-decoration-none fw-semibold">立即注册</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js}"></script>
+
+    <script>
+        const API_BASE = '/api';
+
+        function showAlert(message, type = 'danger') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.classList.remove('d-none');
+
+            if (type !== 'success') {
+                setTimeout(() => {
+                    alert.classList.add('d-none');
+                }, 5000);
+            }
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showAlert('请填写完整信息');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>登录中...';
+
+            try {
+                const response = await fetch(API_BASE + '/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    // 保存token和用户信息
+                    localStorage.setItem('token', result.data.token);
+                    localStorage.setItem('user', JSON.stringify(result.data.user));
+
+                    showAlert('登录成功，正在跳转...', 'success');
+
+                    // 跳转到首页或管理后台
+                    setTimeout(() => {
+                        if (result.data.user.role === 'ADMIN') {
+                            window.location.href = '/admin';
+                        } else {
+                            window.location.href = '/';
+                        }
+                    }, 1000);
+                } else {
+                    showAlert(result.message || '登录失败');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>登录';
+                }
+            } catch (error) {
+                console.error('登录失败:', error);
+                showAlert('登录失败，请稍后重试');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>登录';
+            }
+        }
+
+        // 如果已登录，直接跳转
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                window.location.href = '/';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">文章详情 - 个人博客</title>
+    <!-- Bootstrap 5 CSS -->
+    <link th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link th:href="@{/webjars/bootstrap-icons/1.11.1/font/bootstrap-icons.css}" rel="stylesheet">
+    <!-- Marked.js for Markdown rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.12/marked.min.js"></script>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa;
+        }
+        main {
+            flex: 1;
+        }
+        .navbar-brand {
+            font-weight: 700;
+        }
+        .footer {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+        .article-content {
+            font-size: 1.1rem;
+            line-height: 1.9;
+            color: #444;
+        }
+        .article-content h1, .article-content h2, .article-content h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .article-content pre {
+            background-color: #f4f4f4;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .article-content pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        .article-content code {
+            background-color: #f4f4f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        .article-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .article-content blockquote {
+            border-left: 4px solid #667eea;
+            padding-left: 1rem;
+            margin-left: 0;
+            color: #666;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+        .article-content table {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-collapse: collapse;
+        }
+        .article-content table th,
+        .article-content table td {
+            border: 1px solid #dee2e6;
+            padding: 0.75rem;
+        }
+        .article-content table th {
+            background-color: #f8f9fa;
+        }
+        .article-content ul, .article-content ol {
+            padding-left: 2rem;
+        }
+        .article-content hr {
+            border: none;
+            border-top: 2px solid #dee2e6;
+            margin: 2rem 0;
+        }
+        .action-btn {
+            transition: all 0.3s;
+        }
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+        .action-btn.active {
+            background-color: #3498db !important;
+            border-color: #3498db !important;
+            color: white !important;
+        }
+        .comment-item {
+            transition: background-color 0.3s;
+        }
+        .comment-item:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand text-primary" href="/">
+                <i class="bi bi-journal-richtext me-2"></i>个人博客
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="bi bi-house me-1"></i>首页</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav" id="authButtons">
+                    <li class="nav-item" id="guestButtons">
+                        <a href="/login" class="btn btn-outline-primary me-2">登录</a>
+                        <a href="/register" class="btn btn-primary">注册</a>
+                    </li>
+                    <li class="nav-item dropdown" id="userButtons" style="display: none;">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle me-1"></i>
+                            <span id="userLink">用户</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/user/profile"><i class="bi bi-person me-2"></i>个人中心</a></li>
+                            <li id="adminLink" style="display: none;"><a class="dropdown-item" href="/admin"><i class="bi bi-gear me-2"></i>管理后台</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>退出登录</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <div id="articleContainer">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                        <p class="mt-3 text-muted">加载中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-1">&copy; 2024 个人博客系统. All rights reserved.</p>
+            <p class="mb-0 small">Powered by Spring Boot & Thymeleaf & Bootstrap</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js}"></script>
+
+    <script>
+        const API_BASE = '/api';
+        const articleId = window.location.pathname.split('/').pop();
+        let currentUser = null;
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getCurrentUser() {
+            const userStr = localStorage.getItem('user');
+            return userStr ? JSON.parse(userStr) : null;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+
+        function checkLoginStatus() {
+            const token = getToken();
+            currentUser = getCurrentUser();
+
+            if (token && currentUser) {
+                document.getElementById('guestButtons').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'block';
+                document.getElementById('userLink').textContent = currentUser.nickname || currentUser.username;
+
+                if (currentUser.role === 'ADMIN') {
+                    document.getElementById('adminLink').style.display = 'block';
+                }
+            }
+        }
+
+        async function loadArticle() {
+            try {
+                const token = getToken();
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+                const response = await fetch(`${API_BASE}/articles/${articleId}`, { headers });
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    displayArticle(result.data);
+                    incrementViewCount();
+                    loadComments();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('加载文章失败:', error);
+                document.getElementById('articleContainer').innerHTML = `
+                    <div class="alert alert-danger text-center" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>文章加载失败
+                    </div>
+                `;
+            }
+        }
+
+        function displayArticle(article) {
+            document.getElementById('pageTitle').textContent = `${article.title} - 个人博客`;
+
+            // 渲染Markdown内容
+            let renderedContent = article.content;
+            if (typeof marked !== 'undefined') {
+                try {
+                    renderedContent = marked.parse(article.content || '');
+                } catch (e) {
+                    console.error('Markdown渲染失败:', e);
+                }
+            }
+
+            const html = `
+                <article class="card shadow-sm border-0 mb-4">
+                    <div class="card-body p-4 p-md-5">
+                        <header class="mb-4 pb-4 border-bottom">
+                            <h1 class="display-6 fw-bold mb-3">${article.title}</h1>
+                            <div class="d-flex flex-wrap gap-3 text-muted">
+                                <span><i class="bi bi-person me-1"></i>${article.author?.nickname || article.author?.username || '未知'}</span>
+                                <span><i class="bi bi-calendar me-1"></i>${formatDate(article.createdAt)}</span>
+                                <span><i class="bi bi-eye me-1"></i>${article.viewCount || 0} 次浏览</span>
+                            </div>
+                            ${article.tags && article.tags.length > 0 ? `
+                                <div class="mt-3">
+                                    ${article.tags.map(tag => `<span class="badge bg-light text-secondary me-1"><i class="bi bi-tag me-1"></i>${tag}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                        </header>
+
+                        <div class="article-content mb-4">
+                            ${renderedContent}
+                        </div>
+
+                        <div class="d-flex gap-2 pt-4 border-top">
+                            <button class="btn ${article.isLiked ? 'btn-primary' : 'btn-outline-primary'} action-btn" onclick="toggleLike()" id="likeBtn">
+                                <i class="bi bi-heart${article.isLiked ? '-fill' : ''} me-1"></i>
+                                <span id="likeCount">${article.likeCount || 0}</span>
+                            </button>
+                            <button class="btn ${article.isCollected ? 'btn-primary' : 'btn-outline-warning'} action-btn" onclick="toggleCollect()" id="collectBtn">
+                                <i class="bi bi-star${article.isCollected ? '-fill' : ''} me-1"></i>
+                                <span id="collectCount">${article.collectCount || 0}</span>
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <section class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h5 class="card-title mb-4">
+                            <i class="bi bi-chat-dots me-2"></i>评论 (<span id="commentCount">${article.commentCount || 0}</span>)
+                        </h5>
+
+                        ${currentUser ? `
+                            <div class="mb-4">
+                                <textarea id="commentContent" class="form-control mb-2" rows="3" placeholder="写下你的评论..."></textarea>
+                                <button class="btn btn-primary" onclick="submitComment()">
+                                    <i class="bi bi-send me-1"></i>发表评论
+                                </button>
+                            </div>
+                        ` : `
+                            <div class="alert alert-light mb-4">
+                                <i class="bi bi-info-circle me-2"></i>请<a href="/login">登录</a>后发表评论
+                            </div>
+                        `}
+
+                        <div id="commentList"></div>
+                    </div>
+                </section>
+            `;
+
+            document.getElementById('articleContainer').innerHTML = html;
+        }
+
+        async function incrementViewCount() {
+            try {
+                const token = getToken();
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                await fetch(`${API_BASE}/access-log/article/${articleId}`, {
+                    method: 'POST',
+                    headers: headers
+                });
+            } catch (error) {
+                console.error('记录访问日志失败:', error);
+            }
+        }
+
+        async function toggleLike() {
+            if (!currentUser) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/like-collect/like/${articleId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                });
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    const likeBtn = document.getElementById('likeBtn');
+                    const isLiked = likeBtn.classList.toggle('btn-primary');
+                    likeBtn.classList.toggle('btn-outline-primary');
+                    const icon = likeBtn.querySelector('i');
+                    icon.className = `bi bi-heart${isLiked ? '-fill' : ''} me-1`;
+                    const count = parseInt(document.getElementById('likeCount').textContent);
+                    document.getElementById('likeCount').textContent = isLiked ? count + 1 : count - 1;
+                }
+            } catch (error) {
+                console.error('点赞失败:', error);
+            }
+        }
+
+        async function toggleCollect() {
+            if (!currentUser) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/like-collect/collect/${articleId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                });
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    const collectBtn = document.getElementById('collectBtn');
+                    const isCollected = collectBtn.classList.toggle('btn-primary');
+                    collectBtn.classList.toggle('btn-outline-warning');
+                    const icon = collectBtn.querySelector('i');
+                    icon.className = `bi bi-star${isCollected ? '-fill' : ''} me-1`;
+                    const count = parseInt(document.getElementById('collectCount').textContent);
+                    document.getElementById('collectCount').textContent = isCollected ? count + 1 : count - 1;
+                }
+            } catch (error) {
+                console.error('收藏失败:', error);
+            }
+        }
+
+        async function loadComments() {
+            try {
+                const response = await fetch(`${API_BASE}/comments/article/${articleId}`);
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    // result.data是分页对象，评论在records属性中
+                    const comments = result.data.records || result.data;
+                    displayComments(comments);
+                }
+            } catch (error) {
+                console.error('加载评论失败:', error);
+            }
+        }
+
+        function displayComments(comments) {
+            const commentList = document.getElementById('commentList');
+
+            if (!comments || comments.length === 0) {
+                commentList.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-chat display-4"></i>
+                        <p class="mt-2 mb-0">暂无评论</p>
+                    </div>
+                `;
+                return;
+            }
+
+            commentList.innerHTML = comments.map(comment => `
+                <div class="comment-item border-bottom py-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="fw-semibold text-dark">${comment.author?.nickname || comment.author?.username || '匿名'}</span>
+                            <span class="text-muted small ms-2">${formatDateTime(comment.createdAt)}</span>
+                        </div>
+                        ${currentUser && (currentUser.id === comment.author?.id || currentUser.role === 'ADMIN') ? `
+                            <button class="btn btn-sm btn-link text-danger p-0" onclick="deleteComment(${comment.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                    <p class="mb-0 mt-2 text-secondary">${comment.content}</p>
+                </div>
+            `).join('');
+        }
+
+        async function submitComment() {
+            const content = document.getElementById('commentContent').value.trim();
+
+            if (!content) {
+                alert('请输入评论内容');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({ articleId: parseInt(articleId), content })
+                });
+
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    document.getElementById('commentContent').value = '';
+                    loadComments();
+                    const count = parseInt(document.getElementById('commentCount').textContent);
+                    document.getElementById('commentCount').textContent = count + 1;
+                } else {
+                    alert(result.message || '评论失败');
+                }
+            } catch (error) {
+                console.error('评论失败:', error);
+                alert('评论失败，请稍后重试');
+            }
+        }
+
+        async function deleteComment(commentId) {
+            if (!confirm('确定要删除这条评论吗？')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/comments/${commentId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                });
+
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    loadComments();
+                    const count = parseInt(document.getElementById('commentCount').textContent);
+                    document.getElementById('commentCount').textContent = count - 1;
+                } else {
+                    alert(result.message || '删除失败');
+                }
+            } catch (error) {
+                console.error('删除评论失败:', error);
+                alert('删除失败，请稍后重试');
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatDateTime(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLoginStatus();
+            loadArticle();
+        });
+    </script>
+</body>
+</html>

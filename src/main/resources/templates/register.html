@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - 个人博客</title>
+    <!-- Bootstrap 5 CSS -->
+    <link th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link th:href="@{/webjars/bootstrap-icons/1.11.1/font/bootstrap-icons.css}" rel="stylesheet">
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 0;
+        }
+        .register-card {
+            max-width: 450px;
+            width: 100%;
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .register-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px 16px 0 0;
+            padding: 2rem;
+            color: white;
+            text-align: center;
+        }
+        .register-header i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label {
+            color: #667eea;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-register {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+        }
+        .btn-register:hover {
+            background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .back-home {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+        }
+        .back-home a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+        .back-home a:hover {
+            opacity: 1;
+            color: white;
+        }
+        .form-text {
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="back-home">
+        <a href="/"><i class="bi bi-arrow-left"></i> 返回首页</a>
+    </div>
+
+    <div class="card register-card">
+        <div class="register-header">
+            <i class="bi bi-person-plus"></i>
+            <h3 class="mb-1">创建账户</h3>
+            <p class="mb-0 opacity-75">加入我们的博客社区</p>
+        </div>
+
+        <div class="card-body p-4">
+            <div id="alert" class="alert d-none" role="alert"></div>
+
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="username" placeholder="用户名" required minlength="3" maxlength="20" autocomplete="username">
+                    <label for="username"><i class="bi bi-person me-2"></i>用户名 *</label>
+                    <div class="form-text text-muted px-1">3-20个字符</div>
+                </div>
+
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="nickname" placeholder="昵称" maxlength="30" autocomplete="name">
+                    <label for="nickname"><i class="bi bi-emoji-smile me-2"></i>昵称</label>
+                    <div class="form-text text-muted px-1">选填，最多30个字符</div>
+                </div>
+
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control" id="email" placeholder="邮箱" required autocomplete="email">
+                    <label for="email"><i class="bi bi-envelope me-2"></i>邮箱 *</label>
+                </div>
+
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" id="password" placeholder="密码" required minlength="6" autocomplete="new-password">
+                    <label for="password"><i class="bi bi-lock me-2"></i>密码 *</label>
+                    <div class="form-text text-muted px-1">至少6个字符</div>
+                </div>
+
+                <div class="form-floating mb-4">
+                    <input type="password" class="form-control" id="confirmPassword" placeholder="确认密码" required minlength="6" autocomplete="new-password">
+                    <label for="confirmPassword"><i class="bi bi-lock-fill me-2"></i>确认密码 *</label>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-register btn-lg" id="submitBtn">
+                        <i class="bi bi-person-plus me-2"></i>注册
+                    </button>
+                </div>
+            </form>
+
+            <hr class="my-4">
+
+            <p class="text-center text-muted mb-0">
+                已有账户? <a href="/login" class="text-decoration-none fw-semibold">立即登录</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js}"></script>
+
+    <script>
+        const API_BASE = '/api';
+
+        function showAlert(message, type = 'danger') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.classList.remove('d-none');
+
+            if (type !== 'success') {
+                setTimeout(() => {
+                    alert.classList.add('d-none');
+                }, 5000);
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const nickname = document.getElementById('nickname').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // 验证
+            if (!username || !email || !password || !confirmPassword) {
+                showAlert('请填写必填信息');
+                return;
+            }
+
+            if (username.length < 3 || username.length > 20) {
+                showAlert('用户名长度必须在3-20个字符之间');
+                return;
+            }
+
+            if (password.length < 6) {
+                showAlert('密码长度至少6个字符');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showAlert('两次输入的密码不一致');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>注册中...';
+
+            try {
+                const response = await fetch(API_BASE + '/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username,
+                        nickname: nickname || username,
+                        email,
+                        password
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    showAlert('注册成功，正在跳转到登录页...', 'success');
+
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 1500);
+                } else {
+                    showAlert(result.message || '注册失败');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-person-plus me-2"></i>注册';
+                }
+            } catch (error) {
+                console.error('注册失败:', error);
+                showAlert('注册失败，请稍后重试');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-person-plus me-2"></i>注册';
+            }
+        }
+
+        // 如果已登录，直接跳转
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                window.location.href = '/';
+            }
+        });
+    </script>
+</body>
+</html>

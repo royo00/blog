@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - 个人博客</title>
+    <!-- Bootstrap 5 CSS -->
+    <link th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link th:href="@{/webjars/bootstrap-icons/1.11.1/font/bootstrap-icons.css}" rel="stylesheet">
+    <style>
+        body {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        .sidebar-brand {
+            padding: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+        .sidebar-nav .nav-link {
+            color: rgba(255,255,255,0.7);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s;
+        }
+        .sidebar-nav .nav-link:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+        }
+        .sidebar-nav .nav-link.active {
+            color: white;
+            background-color: rgba(52, 152, 219, 0.5);
+            border-left: 3px solid #3498db;
+        }
+        .sidebar-nav .nav-link i {
+            font-size: 1.1rem;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .stat-card {
+            border: none;
+            border-radius: 12px;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        .chart-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 6px 6px 0 0;
+            transition: height 0.5s;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <i class="bi bi-speedometer2 me-2"></i>管理后台
+        </div>
+        <nav class="sidebar-nav">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/admin">
+                        <i class="bi bi-graph-up"></i>统计概览
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/articles">
+                        <i class="bi bi-file-text"></i>文章管理
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/users">
+                        <i class="bi bi-people"></i>用户管理
+                    </a>
+                </li>
+                <li class="nav-item mt-4">
+                    <a class="nav-link" href="/">
+                        <i class="bi bi-house"></i>返回首页
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="#" onclick="logout()">
+                        <i class="bi bi-box-arrow-left"></i>退出登录
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1">统计概览</h2>
+                <p class="text-muted mb-0">查看网站整体数据统计</p>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-outline-primary" onclick="refreshStatistics()" id="refreshBtn">
+                    <i class="bi bi-arrow-clockwise me-1"></i>刷新数据
+                </button>
+                <span class="badge bg-primary fs-6" id="todayDate"></span>
+            </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6 col-xl-3">
+                <div class="card stat-card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-primary me-3">
+                                <i class="bi bi-file-text"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-1">总文章数</h6>
+                                <div class="stat-value text-primary" id="totalArticles">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3">
+                <div class="card stat-card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-success me-3">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-1">总用户数</h6>
+                                <div class="stat-value text-success" id="totalUsers">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3">
+                <div class="card stat-card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-warning me-3">
+                                <i class="bi bi-chat-dots"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-1">总评论数</h6>
+                                <div class="stat-value text-warning" id="totalComments">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-xl-3">
+                <div class="card stat-card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="stat-icon bg-info me-3">
+                                <i class="bi bi-eye"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted mb-1">总浏览量</h6>
+                                <div class="stat-value text-info" id="totalViews">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- 访问量趋势图 -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>最近7天访问量趋势</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="viewChart" class="d-flex align-items-end justify-content-around gap-2" style="height: 250px; border-left: 2px solid #dee2e6; border-bottom: 2px solid #dee2e6; padding: 1rem;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最新文章 -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>最新文章</h5>
+                        <a href="/admin/articles" class="btn btn-sm btn-outline-primary">查看全部</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="recentArticles" class="list-group list-group-flush"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js}"></script>
+
+    <script>
+        const API_BASE = '/api';
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        function checkAdmin() {
+            const token = getToken();
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+            if (!token || !user.role) {
+                alert('请先登录');
+                window.location.href = '/login';
+                return false;
+            }
+
+            if (user.role !== 'ADMIN') {
+                alert('您没有管理员权限');
+                window.location.href = '/';
+                return false;
+            }
+            return true;
+        }
+
+        async function apiRequest(url, options = {}) {
+            const token = getToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch(API_BASE + url, {
+                ...options,
+                headers
+            });
+
+            return response.json();
+        }
+
+        async function loadStatistics() {
+            try {
+                // 加载真实统计数据
+                const statsResult = await apiRequest('/admin/statistics');
+                if (statsResult.code === 200) {
+                    const stats = statsResult.data;
+                    document.getElementById('totalArticles').textContent = stats.totalArticles || 0;
+                    document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
+                    document.getElementById('totalComments').textContent = stats.totalComments || 0;
+                    document.getElementById('totalViews').textContent = formatNumber(stats.totalViews || 0);
+
+                    // 绘制趋势图（使用真实数据或模拟数据）
+                    drawViewChart(stats.recentStatistics || []);
+                }
+
+                // 加载最新文章
+                loadRecentArticles();
+            } catch (error) {
+                console.error('加载统计数据失败:', error);
+                // 显示错误提示但不阻塞页面
+                document.getElementById('totalArticles').textContent = '-';
+                document.getElementById('totalUsers').textContent = '-';
+                document.getElementById('totalComments').textContent = '-';
+                document.getElementById('totalViews').textContent = '-';
+            }
+        }
+
+        function formatNumber(num) {
+            if (num >= 10000) {
+                return (num / 10000).toFixed(1) + '万';
+            } else if (num >= 1000) {
+                return num.toLocaleString();
+            }
+            return num.toString();
+        }
+
+        function drawViewChart(recentStats) {
+            const chart = document.getElementById('viewChart');
+
+            // 如果有真实数据则使用真实数据，否则显示空状态
+            if (recentStats && recentStats.length > 0) {
+                const values = recentStats.map(s => s.pv || 0);
+                const maxValue = Math.max(...values, 1); // 避免除以0
+
+                console.log('绘制图表数据:', values, '最大值:', maxValue);
+
+                chart.innerHTML = recentStats.map((stat, index) => {
+                    const value = values[index];
+                    // 计算高度（最大160px，留出空间给label和badge）
+                    let height = 0;
+                    if (value > 0) {
+                        height = Math.max((value / maxValue) * 160, 10);
+                    }
+
+                    const date = new Date(stat.statisticDate);
+                    const month = date.getMonth() + 1;
+                    const day = date.getDate();
+                    const dayName = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][date.getDay()];
+
+                    return `
+                        <div class="flex-fill mx-1" style="display: flex; flex-direction: column-reverse; align-items: center;">
+                            <small class="text-muted mt-2" style="font-size: 0.7rem; white-space: nowrap;">${month}/${day} ${dayName}</small>
+                            <div class="chart-bar mt-1" style="height: ${height}px; width: 40px; ${value === 0 ? 'opacity: 0.2;' : ''}"
+                                 data-bs-toggle="tooltip" title="${month}月${day}日 (${dayName}): PV ${value} | UV ${stat.uv || 0}"></div>
+                            <small class="badge bg-secondary mb-1" style="min-width: 30px;">${value}</small>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                // 显示最近7天的占位数据
+                const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+                chart.innerHTML = days.map(day => `
+                    <div class="flex-fill mx-1" style="display: flex; flex-direction: column-reverse; align-items: center;">
+                        <small class="text-muted mt-2" style="font-size: 0.7rem;">${day}</small>
+                        <div class="chart-bar mt-1" style="height: 40px; width: 40px; opacity: 0.3;"
+                             data-bs-toggle="tooltip" title="${day}: 暂无数据"></div>
+                    </div>
+                `).join('');
+            }
+
+            // 初始化工具提示
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+        }
+
+        async function loadRecentArticles() {
+            try {
+                const response = await fetch(`${API_BASE}/articles?page=1&pageSize=5`);
+                const result = await response.json();
+
+                if (result.code === 200 && result.data.records.length > 0) {
+                    const html = result.data.records.map(article => `
+                        <a href="/article/${article.id}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 text-truncate" style="max-width: 200px;">${article.title}</h6>
+                                <small class="text-muted">${article.viewCount || 0} <i class="bi bi-eye"></i></small>
+                            </div>
+                            <small class="text-muted">${formatDate(article.createdAt)}</small>
+                        </a>
+                    `).join('');
+                    document.getElementById('recentArticles').innerHTML = html;
+                } else {
+                    document.getElementById('recentArticles').innerHTML = '<p class="text-muted text-center py-4">暂无文章</p>';
+                }
+            } catch (error) {
+                console.error('加载最新文章失败:', error);
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        async function refreshStatistics() {
+            const btn = document.getElementById('refreshBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>刷新中...';
+
+            try {
+                const response = await apiRequest('/admin/statistics/refresh', { method: 'POST' });
+                if (response.code === 200) {
+                    // 刷新成功后重新加载统计数据
+                    await loadStatistics();
+                    alert('统计数据刷新成功');
+                } else {
+                    alert(response.message || '刷新失败');
+                }
+            } catch (error) {
+                console.error('刷新统计数据失败:', error);
+                alert('刷新失败，请稍后重试');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // 显示今日日期
+            const today = new Date();
+            document.getElementById('todayDate').textContent = today.toLocaleDateString('zh-CN', {
+                year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
+            });
+
+            if (checkAdmin()) {
+                loadStatistics();
+            }
+        });
+    </script>
+</body>
+</html>

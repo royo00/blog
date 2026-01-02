@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页 - 个人博客</title>
+    <!-- Bootstrap 5 CSS -->
+    <link th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link th:href="@{/webjars/bootstrap-icons/1.11.1/font/bootstrap-icons.css}" rel="stylesheet">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa;
+        }
+        main {
+            flex: 1;
+        }
+        .navbar-brand {
+            font-weight: 700;
+        }
+        .footer {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+        }
+        .article-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: none;
+            border-radius: 12px;
+        }
+        .article-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .article-card .card-title a {
+            color: #2c3e50;
+            text-decoration: none;
+        }
+        .article-card .card-title a:hover {
+            color: #3498db;
+        }
+        .tag-badge {
+            font-weight: normal;
+            font-size: 0.75rem;
+        }
+        .stat-icon {
+            font-size: 0.85rem;
+        }
+        .search-section {
+            margin-top: -1.5rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand text-primary" href="/">
+                <i class="bi bi-journal-richtext me-2"></i>个人博客
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/"><i class="bi bi-house me-1"></i>首页</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav" id="authButtons">
+                    <li class="nav-item" id="guestButtons">
+                        <a href="/login" class="btn btn-outline-primary me-2">登录</a>
+                        <a href="/register" class="btn btn-primary">注册</a>
+                    </li>
+                    <li class="nav-item dropdown" id="userButtons" style="display: none;">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle me-1"></i>
+                            <span id="userLink">用户</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/user/profile"><i class="bi bi-person me-2"></i>个人中心</a></li>
+                            <li id="adminLink" style="display: none;"><a class="dropdown-item" href="/admin"><i class="bi bi-gear me-2"></i>管理后台</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>退出登录</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero区域 -->
+    <section class="hero-section">
+        <div class="container text-center">
+            <h1 class="display-5 fw-bold mb-3"><i class="bi bi-journal-richtext me-2"></i>欢迎来到个人博客</h1>
+            <p class="lead mb-0">分享知识，记录生活，探索技术的无限可能</p>
+        </div>
+    </section>
+
+    <!-- 主内容 -->
+    <main class="container">
+        <!-- 搜索栏 -->
+        <div class="search-section">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form class="row g-3" onsubmit="searchArticles(event)">
+                        <div class="col-md-10">
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="bi bi-search text-muted"></i>
+                                </span>
+                                <input type="text" id="searchInput" class="form-control border-start-0 ps-0"
+                                       placeholder="搜索文章标题或内容...">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary btn-lg w-100">
+                                <i class="bi bi-search me-1"></i>搜索
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 文章列表 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="mb-0"><i class="bi bi-file-text me-2"></i>最新文章</h4>
+                    <span class="text-muted" id="articleCountText"></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="articleList" class="row g-4">
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                </div>
+                <p class="mt-3 text-muted">加载中...</p>
+            </div>
+        </div>
+
+        <!-- 分页 -->
+        <nav id="pagination" class="mt-4" style="display: none;">
+            <ul class="pagination justify-content-center"></ul>
+        </nav>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-1">&copy; 2024 个人博客系统. All rights reserved.</p>
+            <p class="mb-0 small">Powered by Spring Boot & Thymeleaf & Bootstrap</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js}"></script>
+
+    <script>
+        const API_BASE = '/api';
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentKeyword = '';
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getCurrentUser() {
+            const userStr = localStorage.getItem('user');
+            return userStr ? JSON.parse(userStr) : null;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+
+        function checkLoginStatus() {
+            const token = getToken();
+            const user = getCurrentUser();
+
+            if (token && user) {
+                document.getElementById('guestButtons').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'block';
+                document.getElementById('userLink').textContent = user.nickname || user.username;
+
+                if (user.role === 'ADMIN') {
+                    document.getElementById('adminLink').style.display = 'block';
+                }
+            } else {
+                document.getElementById('guestButtons').style.display = 'block';
+                document.getElementById('userButtons').style.display = 'none';
+            }
+        }
+
+        async function loadArticles(page = 1, keyword = '') {
+            try {
+                const url = keyword
+                    ? `/articles/search?keyword=${encodeURIComponent(keyword)}&page=${page}&pageSize=10`
+                    : `/articles?page=${page}&pageSize=10`;
+
+                const response = await fetch(API_BASE + url);
+                const result = await response.json();
+
+                if (result.code === 200) {
+                    displayArticles(result.data.records);
+                    currentPage = result.data.current;
+                    totalPages = result.data.pages;
+                    const total = result.data.total;
+                    document.getElementById('articleCountText').textContent = `共 ${total} 篇文章`;
+                    updatePagination();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('加载文章失败:', error);
+                document.getElementById('articleList').innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger text-center" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>加载失败，请稍后重试
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function displayArticles(articles) {
+            const articleList = document.getElementById('articleList');
+
+            if (!articles || articles.length === 0) {
+                articleList.innerHTML = `
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body text-center py-5">
+                                <i class="bi bi-inbox display-1 text-muted"></i>
+                                <p class="mt-3 text-muted mb-0">暂无文章</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            articleList.innerHTML = articles.map(article => `
+                <div class="col-12">
+                    <div class="card article-card shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <h5 class="card-title mb-2">
+                                <a href="/article/${article.id}" class="text-decoration-none fw-bold">${article.title}</a>
+                            </h5>
+                            <div class="d-flex flex-wrap gap-2 mb-2 text-muted small">
+                                <span><i class="bi bi-person me-1"></i>${article.author?.nickname || article.author?.username || '未知'}</span>
+                                <span><i class="bi bi-calendar me-1"></i>${formatDate(article.createdAt)}</span>
+                            </div>
+                            ${article.summary ? `<p class="card-text text-muted mb-3">${article.summary}</p>` : ''}
+                            ${article.tags && article.tags.length > 0 ? `
+                                <div class="mb-3">
+                                    ${article.tags.map(tag => `<span class="badge bg-light text-secondary tag-badge me-1"><i class="bi bi-tag me-1"></i>${tag}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                            <div class="d-flex gap-3 text-muted small">
+                                <span class="stat-icon"><i class="bi bi-eye me-1"></i>${article.viewCount || 0}</span>
+                                <span class="stat-icon"><i class="bi bi-heart me-1"></i>${article.likeCount || 0}</span>
+                                <span class="stat-icon"><i class="bi bi-star me-1"></i>${article.collectCount || 0}</span>
+                                <span class="stat-icon"><i class="bi bi-chat me-1"></i>${article.commentCount || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updatePagination() {
+            const pagination = document.getElementById('pagination');
+            const paginationUl = pagination.querySelector('ul');
+
+            if (totalPages <= 1) {
+                pagination.style.display = 'none';
+                return;
+            }
+
+            pagination.style.display = 'block';
+            let html = '';
+
+            // 上一页
+            html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>`;
+
+            // 页码
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                    </li>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+
+            // 下一页
+            html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>`;
+
+            paginationUl.innerHTML = html;
+        }
+
+        function changePage(page) {
+            if (page < 1 || page > totalPages) return;
+            loadArticles(page, currentKeyword);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function searchArticles(event) {
+            event.preventDefault();
+            currentKeyword = document.getElementById('searchInput').value.trim();
+            loadArticles(1, currentKeyword);
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 页面加载
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLoginStatus();
+            loadArticles();
+        });
+    </script>
+</body>
+</html>

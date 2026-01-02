@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 个人博客</title>
+    <!-- Bootstrap 5 CSS -->
+    <link th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link th:href="@{/webjars/bootstrap-icons/1.11.1/font/bootstrap-icons.css}" rel="stylesheet">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa;
+        }
+        main {
+            flex: 1;
+        }
+        .navbar-brand {
+            font-weight: 700;
+        }
+        .footer {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: white;
+            font-weight: bold;
+        }
+        .article-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: none;
+        }
+        .article-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .nav-pills .nav-link {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand text-primary" href="/">
+                <i class="bi bi-journal-richtext me-2"></i>个人博客
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="bi bi-house me-1"></i>首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/user/profile"><i class="bi bi-person me-1"></i>个人中心</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li id="adminLink" class="nav-item" style="display: none;">
+                        <a class="nav-link" href="/admin"><i class="bi bi-gear me-1"></i>管理后台</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" onclick="logout()" class="btn btn-outline-danger">
+                            <i class="bi bi-box-arrow-right me-1"></i>退出登录
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="container py-4">
+        <!-- 用户信息卡片 -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="profile-avatar" id="avatar"></div>
+                    </div>
+                    <div class="col">
+                        <h3 class="mb-1" id="nickname">用户昵称</h3>
+                        <p class="text-muted mb-1"><i class="bi bi-envelope me-2"></i><span id="email">email@example.com</span></p>
+                        <p class="text-muted mb-0"><i class="bi bi-calendar me-2"></i>注册时间: <span id="registerTime">2024-01-01</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 标签页 -->
+        <ul class="nav nav-pills mb-4" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="liked-tab" data-bs-toggle="pill" data-bs-target="#liked" type="button" role="tab">
+                    <i class="bi bi-heart me-1"></i>我的点赞
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="collected-tab" data-bs-toggle="pill" data-bs-target="#collected" type="button" role="tab">
+                    <i class="bi bi-star me-1"></i>我的收藏
+                </button>
+            </li>
+        </ul>
+
+        <!-- 标签页内容 -->
+        <div class="tab-content" id="profileTabContent">
+            <div class="tab-pane fade show active" id="liked" role="tabpanel">
+                <div id="likedList">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="collected" role="tabpanel">
+                <div id="collectedList">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-1">&copy; 2024 个人博客系统. All rights reserved.</p>
+            <p class="mb-0 small">Powered by Spring Boot & Thymeleaf & Bootstrap</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js}"></script>
+
+    <script>
+        const API_BASE = '/api';
+        let likedLoaded = false;
+        let collectedLoaded = false;
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function getCurrentUser() {
+            const userStr = localStorage.getItem('user');
+            return userStr ? JSON.parse(userStr) : null;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+
+        function checkAuth() {
+            const token = getToken();
+            const user = getCurrentUser();
+
+            if (!token || !user) {
+                alert('请先登录');
+                window.location.href = '/login';
+                return null;
+            }
+
+            if (user.role === 'ADMIN') {
+                document.getElementById('adminLink').style.display = 'block';
+            }
+
+            return user;
+        }
+
+        async function apiRequest(url, options = {}) {
+            const token = getToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch(API_BASE + url, {
+                ...options,
+                headers
+            });
+
+            return response.json();
+        }
+
+        function loadUserProfile() {
+            const user = getCurrentUser();
+            if (!user) return;
+
+            document.getElementById('avatar').textContent = (user.nickname || user.username).charAt(0).toUpperCase();
+            document.getElementById('nickname').textContent = user.nickname || user.username;
+            document.getElementById('email').textContent = user.email || '';
+            if (user.createdAt) {
+                document.getElementById('registerTime').textContent = formatDate(user.createdAt);
+            }
+        }
+
+        async function loadLikedArticles() {
+            if (likedLoaded) return;
+            try {
+                const result = await apiRequest('/like-collect/liked-articles');
+
+                if (result.code === 200) {
+                    displayArticles(result.data, 'likedList');
+                    likedLoaded = true;
+                } else {
+                    document.getElementById('likedList').innerHTML = `
+                        <div class="alert alert-warning text-center">
+                            <i class="bi bi-exclamation-triangle me-2"></i>${result.message || '加载失败'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('加载点赞文章失败:', error);
+                document.getElementById('likedList').innerHTML = `
+                    <div class="alert alert-danger text-center">
+                        <i class="bi bi-exclamation-triangle me-2"></i>加载失败，请稍后重试
+                    </div>
+                `;
+            }
+        }
+
+        async function loadCollectedArticles() {
+            if (collectedLoaded) return;
+            try {
+                const result = await apiRequest('/like-collect/collected-articles');
+
+                if (result.code === 200) {
+                    displayArticles(result.data, 'collectedList');
+                    collectedLoaded = true;
+                } else {
+                    document.getElementById('collectedList').innerHTML = `
+                        <div class="alert alert-warning text-center">
+                            <i class="bi bi-exclamation-triangle me-2"></i>${result.message || '加载失败'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('加载收藏文章失败:', error);
+                document.getElementById('collectedList').innerHTML = `
+                    <div class="alert alert-danger text-center">
+                        <i class="bi bi-exclamation-triangle me-2"></i>加载失败，请稍后重试
+                    </div>
+                `;
+            }
+        }
+
+        function displayArticles(articles, containerId) {
+            const container = document.getElementById(containerId);
+
+            if (!articles || articles.length === 0) {
+                container.innerHTML = `
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-inbox display-1 text-muted"></i>
+                            <p class="mt-3 text-muted mb-0">暂无内容</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `<div class="row g-3">` + articles.map(article => `
+                <div class="col-12">
+                    <div class="card article-card shadow-sm" onclick="window.location.href='/article/${article.id}'" style="cursor: pointer;">
+                        <div class="card-body">
+                            <h5 class="card-title mb-2">${article.title}</h5>
+                            <div class="d-flex gap-3 text-muted small">
+                                <span><i class="bi bi-calendar me-1"></i>${formatDate(article.createdAt)}</span>
+                                <span><i class="bi bi-eye me-1"></i>${article.viewCount || 0}</span>
+                                <span><i class="bi bi-heart me-1"></i>${article.likeCount || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('') + `</div>`;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 监听标签页切换
+        document.getElementById('collected-tab').addEventListener('shown.bs.tab', function() {
+            loadCollectedArticles();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = checkAuth();
+            if (user) {
+                loadUserProfile();
+                loadLikedArticles();
+            }
+        });
+    </script>
+</body>
+</html>

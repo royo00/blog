@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章编辑 - 管理后台</title>
+    <!-- Bootstrap 5 CSS -->
+    <link th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link th:href="@{/webjars/bootstrap-icons/1.11.1/font/bootstrap-icons.css}" rel="stylesheet">
+    <style>
+        body {
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            z-index: 1000;
+        }
+        .sidebar-brand {
+            padding: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: white;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+        .sidebar-nav .nav-link {
+            color: rgba(255,255,255,0.7);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s;
+        }
+        .sidebar-nav .nav-link:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+        }
+        .sidebar-nav .nav-link.active {
+            color: white;
+            background-color: rgba(52, 152, 219, 0.5);
+            border-left: 3px solid #3498db;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+        }
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            min-height: 50px;
+            cursor: text;
+        }
+        .tags-container:focus-within {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+        }
+        .tag-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+        .tag-item button {
+            background: none;
+            border: none;
+            color: white;
+            padding: 0;
+            margin-left: 0.25rem;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+        .tag-item button:hover {
+            opacity: 1;
+        }
+        .tag-input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 100px;
+            padding: 0.25rem;
+        }
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; height: auto; position: relative; }
+            .main-content { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <i class="bi bi-speedometer2 me-2"></i>管理后台
+        </div>
+        <nav class="sidebar-nav">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin">
+                        <i class="bi bi-graph-up"></i>统计概览
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/admin/articles">
+                        <i class="bi bi-file-text"></i>文章管理
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/admin/users">
+                        <i class="bi bi-people"></i>用户管理
+                    </a>
+                </li>
+                <li class="nav-item mt-4">
+                    <a class="nav-link" href="/">
+                        <i class="bi bi-house"></i>返回首页
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="#" onclick="logout()">
+                        <i class="bi bi-box-arrow-left"></i>退出登录
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1" id="pageTitle">新建文章</h2>
+                <p class="text-muted mb-0">创建并发布新的博客文章</p>
+            </div>
+            <a href="/admin/articles" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>返回列表
+            </a>
+        </div>
+
+        <div id="alert" class="alert d-none" role="alert"></div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form id="articleForm" onsubmit="handleSubmit(event)">
+                    <div class="mb-4">
+                        <label for="title" class="form-label fw-semibold">
+                            <i class="bi bi-type me-1"></i>文章标题 <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control form-control-lg" id="title" name="title" required placeholder="请输入文章标题">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="summary" class="form-label fw-semibold">
+                            <i class="bi bi-text-paragraph me-1"></i>文章摘要
+                        </label>
+                        <input type="text" class="form-control" id="summary" name="summary" placeholder="请输入文章摘要（选填，最多200字符）" maxlength="200">
+                        <div class="form-text">简短描述文章内容，将显示在文章列表中</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-tags me-1"></i>标签
+                        </label>
+                        <div class="tags-container" id="tagsContainer" onclick="document.getElementById('tagInput').focus()">
+                            <input type="text" id="tagInput" class="tag-input" placeholder="输入标签后按回车添加">
+                        </div>
+                        <div class="form-text">添加相关标签，帮助读者更好地找到您的文章</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="content" class="form-label fw-semibold">
+                            <i class="bi bi-file-text me-1"></i>文章内容 <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="content" name="content" required rows="15" placeholder="请输入文章内容（支持Markdown格式）"></textarea>
+                        <div class="form-text">支持Markdown语法，可以使用 # 标题、**粗体**、*斜体* 等格式</div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                        <a href="/admin/articles" class="btn btn-outline-secondary px-4">
+                            <i class="bi bi-x-lg me-1"></i>取消
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4" id="submitBtn">
+                            <i class="bi bi-check-lg me-1"></i>发布文章
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script th:src="@{/webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js}"></script>
+
+    <script>
+        const API_BASE = '/api';
+        const articleId = window.location.pathname.includes('/edit/')
+            ? window.location.pathname.split('/').pop()
+            : null;
+        const tags = [];
+
+        function getToken() {
+            return localStorage.getItem('token');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        function checkAdmin() {
+            const token = getToken();
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+            if (!token || !user.role) {
+                alert('请先登录');
+                window.location.href = '/login';
+                return false;
+            }
+
+            if (user.role !== 'ADMIN') {
+                alert('您没有管理员权限');
+                window.location.href = '/';
+                return false;
+            }
+            return true;
+        }
+
+        async function apiRequest(url, options = {}) {
+            const token = getToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch(API_BASE + url, {
+                ...options,
+                headers
+            });
+
+            return response.json();
+        }
+
+        function showAlert(message, type = 'danger') {
+            const alert = document.getElementById('alert');
+            alert.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>${message}`;
+            alert.className = `alert alert-${type}`;
+            alert.classList.remove('d-none');
+
+            if (type !== 'success') {
+                setTimeout(() => {
+                    alert.classList.add('d-none');
+                }, 5000);
+            }
+        }
+
+        // 标签管理
+        const tagInput = document.getElementById('tagInput');
+        const tagsContainer = document.getElementById('tagsContainer');
+
+        tagInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const tag = tagInput.value.trim();
+                if (tag && !tags.includes(tag)) {
+                    addTag(tag);
+                    tagInput.value = '';
+                }
+            } else if (e.key === 'Backspace' && tagInput.value === '' && tags.length > 0) {
+                removeTag(tags.length - 1);
+            }
+        });
+
+        function addTag(tag) {
+            tags.push(tag);
+            renderTags();
+        }
+
+        function removeTag(index) {
+            tags.splice(index, 1);
+            renderTags();
+        }
+
+        function renderTags() {
+            const existingTags = tagsContainer.querySelectorAll('.tag-item');
+            existingTags.forEach(tag => tag.remove());
+
+            tags.forEach((tag, index) => {
+                const tagElement = document.createElement('span');
+                tagElement.className = 'tag-item';
+                tagElement.innerHTML = `
+                    <i class="bi bi-tag"></i>
+                    ${tag}
+                    <button type="button" onclick="removeTag(${index})">&times;</button>
+                `;
+                tagsContainer.insertBefore(tagElement, tagInput);
+            });
+        }
+
+        async function loadArticle() {
+            if (!articleId) return;
+
+            try {
+                const result = await apiRequest(`/articles/${articleId}`);
+
+                if (result.code === 200) {
+                    const article = result.data;
+                    document.getElementById('pageTitle').textContent = '编辑文章';
+                    document.getElementById('title').value = article.title;
+                    document.getElementById('summary').value = article.summary || '';
+                    document.getElementById('content').value = article.content;
+                    document.getElementById('submitBtn').innerHTML = '<i class="bi bi-check-lg me-1"></i>更新文章';
+
+                    // 加载标签
+                    if (article.tags && article.tags.length > 0) {
+                        article.tags.forEach(tag => addTag(tag));
+                    }
+                } else {
+                    showAlert('加载文章失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('加载文章失败:', error);
+                showAlert('加载文章失败');
+            }
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('title').value.trim();
+            const summary = document.getElementById('summary').value.trim();
+            const content = document.getElementById('content').value.trim();
+
+            if (!title || !content) {
+                showAlert('请填写必填字段');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>' + (articleId ? '更新中...' : '发布中...');
+
+            try {
+                const url = articleId ? `/articles/${articleId}` : '/articles';
+                const method = articleId ? 'PUT' : 'POST';
+
+                const result = await apiRequest(url, {
+                    method,
+                    body: JSON.stringify({ title, summary, content, tags })
+                });
+
+                if (result.code === 200) {
+                    showAlert(articleId ? '更新成功' : '发布成功', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/admin/articles';
+                    }, 1500);
+                } else {
+                    showAlert(result.message || (articleId ? '更新失败' : '发布失败'));
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            } catch (error) {
+                console.error('操作失败:', error);
+                showAlert('操作失败，请稍后重试');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (checkAdmin()) {
+                if (articleId) {
+                    loadArticle();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
