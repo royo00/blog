@@ -152,7 +152,7 @@ UPDATE user SET is_admin = 1 WHERE username = '你的用户名';
 
 每天凌晨1点自动执行统计聚合：
 - 计算前一天的PV（页面浏览量）
-- 计算UV（独立访客数，基于IP去重）
+- 计算UV（访客数）
 - 统计新注册用户数
 - 数据保存到 `site_statistics` 表
 
@@ -170,30 +170,6 @@ mvn test -Dtest=UserServiceTest
 - 单元测试：Service层核心逻辑
 - 集成测试：Controller接口测试
 
-## 📝 开发说明
-
-详细的开发说明和配置信息请查看 [CLAUDE.md](./CLAUDE.md)
-
-包含：
-- 完整的项目进度记录
-- 重要配置信息
-- 关键文件位置
-- 常见问题解决
-- 待优化项目清单
-
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
 ## 📄 许可证
 
 [MIT License](LICENSE)
-
-## 📮 联系方式
-
-- 项目地址: [GitHub](https://github.com/yourusername/blog)
-- 问题反馈: [Issues](https://github.com/yourusername/blog/issues)
-
----
-
-⭐ 如果这个项目对你有帮助，请给一个Star支持一下！
